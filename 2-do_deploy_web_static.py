@@ -1,14 +1,12 @@
 #!/usr/bin/python3
 # Fabfile to distribute an archive to a web server.
 import os.path
-from fabric.api import env
-from fabric.api import put
-from fabric.api import run
+from fabric import task, Connection, Config
 
-env.hosts = ["54.165.43.217", "34.229.70.47"]
+env = {"hosts": ["54.165.43.217", "34.229.70.47"]}
 
-
-def do_deploy(archive_path):
+@task
+def do_deploy(ctx, archive_path):
     """Distributes an archive to a web server.
     Args:
         archive_path (str): The path of the archive to distribute.
@@ -18,31 +16,50 @@ def do_deploy(archive_path):
     """
     if os.path.isfile(archive_path) is False:
         return False
+
     file = archive_path.split("/")[-1]
     name = file.split(".")[0]
 
-    if put(archive_path, "/tmp/{}".format(file)).failed is True:
+    # Create a Connection object
+    conn = Connection(ctx["host"])
+
+    # Use the Connection object to run commands
+    result = conn.put(archive_path, "/tmp/{}".format(file))
+    if result.failed:
         return False
-    if run("rm -rf /data/web_static/releases/{}/".
-           format(name)).failed is True:
+
+    result = conn.run("rm -rf /data/web_static/releases/{}/".format(name))
+    if result.failed:
         return False
-    if run("mkdir -p /data/web_static/releases/{}/".
-           format(name)).failed is True:
+
+    result = conn.run("mkdir -p /data/web_static/releases/{}/".format(name))
+    if result.failed:
         return False
-    if run("tar -xzf /tmp/{} -C /data/web_static/releases/{}/".
-           format(file, name)).failed is True:
+
+    result = conn.run("tar -xzf /tmp/{} -C /data/web_static/releases/{}/".format(file, name))
+    if result.failed:
         return False
-    if run("rm /tmp/{}".format(file)).failed is True:
+
+    result = conn.run("rm /tmp/{}".format(file))
+    if result.failed:
         return False
-    if run("mv /data/web_static/releases/{}/web_static/* "
-           "/data/web_static/releases/{}/".format(name, name)).failed is True:
+
+    result = conn.run("mv /data/web_static/releases/{}/web_static/* "
+                      "/data/web_static/releases/{}/".format(name, name))
+    if result.failed:
         return False
-    if run("rm -rf /data/web_static/releases/{}/web_static".
-           format(name)).failed is True:
+
+    result = conn.run("rm -rf /data/web_static/releases/{}/web_static".format(name))
+    if result.failed:
         return False
-    if run("rm -rf /data/web_static/current").failed is True:
+
+    result = conn.run("rm -rf /data/web_static/current")
+    if result.failed:
         return False
-    if run("ln -s /data/web_static/releases/{}/ /data/web_static/current".
-           format(name)).failed is True:
+
+    result = conn.run("ln -s /data/web_static/releases/{}/ /data/web_static/current".format(name))
+    if result.failed:
         return False
+
     return True
+
