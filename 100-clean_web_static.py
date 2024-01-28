@@ -1,9 +1,15 @@
 #!/usr/bin/python3
-# Fabfile to delete out-of-date archives.
+"""
+Deletes out-of-date archives
+fab -f 100-clean_web_static.py do_clean:number=2
+    -i ssh-key -u ubuntu > /dev/null 2>&1
+"""
+
 import os
 from fabric.api import *
 
-env.hosts = ["54.165.43.217", "34.229.70.47"]
+env.hosts = ['54.173.87.162', '18.210.20.153']
+
 
 def do_clean(number=0):
     """Delete out-of-date archives.
